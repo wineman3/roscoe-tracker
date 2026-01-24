@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --main: #88aaee;
+    --overlay: #88aaee;
+    --bg: #dfe5f2;
+    --bw: #000;
+    --blank: #fff;
+    --text: #000;
+    --border: #000;
+    --shadow: 4px 4px 0px 0px #000;
+    --shadow-offset: 4px;
+  }
+
+  body {
+    @apply bg-bg text-text font-base;
+  }
+}
+
+@layer utilities {
+  .shadow-neo {
+    box-shadow: var(--shadow);
+  }
+
+  .shadow-neo-sm {
+    box-shadow: 2px 2px 0px 0px #000;
+  }
+
+  .border-neo {
+    @apply border-2 border-border;
+  }
+
+  .neo-hover {
+    @apply transition-all duration-75;
+  }
+
+  .neo-hover:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px #000;
+  }
+
+  .neo-hover:active {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+}
