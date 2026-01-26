@@ -53,7 +53,7 @@ export function CompetitionView({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sortedStats.map((user, index) => {
+          {sortedStats.map((user) => {
             const isLeader = user.id === leader?.id && difference > 0;
             return (
               <div
@@ -72,7 +72,7 @@ export function CompetitionView({
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-heading border-2 border-border"
                     style={{
-                      backgroundColor: index === 0 ? "#3B82F6" : "#10B981",
+                      backgroundColor: user.avatar_color || "#3B82F6",
                     }}
                   >
                     {user.display_name?.[0]?.toUpperCase() || "?"}

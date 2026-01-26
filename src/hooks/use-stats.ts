@@ -9,17 +9,25 @@ export function useStats() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("user_stats").select("*");
+    const [statsRes, profilesRes] = await Promise.all([
+      supabase.from("user_stats").select("*"),
+      supabase.from("profiles").select("id, avatar_color"),
+    ]);
 
-    if (error) {
-      console.error("Error loading stats:", error);
+    if (statsRes.error) {
+      console.error("Error loading stats:", statsRes.error);
       return;
     }
 
-    // Provide defaults for nullable fields
-    const normalized = (data || []).map((row) => ({
+    const profileColors = new Map(
+      (profilesRes.data || []).map((p) => [p.id, p.avatar_color])
+    );
+
+    // Provide defaults for nullable fields and merge avatar_color
+    const normalized = (statsRes.data || []).map((row) => ({
       id: row.id ?? "",
       display_name: row.display_name ?? "Unknown",
+      avatar_color: profileColors.get(row.id ?? "") ?? "#3B82F6",
       total_miles: row.total_miles ?? 0,
       total_walks: row.total_walks ?? 0,
       last_walk_date: row.last_walk_date,
@@ -43,11 +51,18 @@ export function useStats() {
           table: "walks",
         },
         async () => {
-          const { data } = await supabase.from("user_stats").select("*");
-          if (data) {
-            const normalized = data.map((row) => ({
+          const [statsRes, profilesRes] = await Promise.all([
+            supabase.from("user_stats").select("*"),
+            supabase.from("profiles").select("id, avatar_color"),
+          ]);
+          if (statsRes.data) {
+            const profileColors = new Map(
+              (profilesRes.data || []).map((p) => [p.id, p.avatar_color])
+            );
+            const normalized = statsRes.data.map((row) => ({
               id: row.id ?? "",
               display_name: row.display_name ?? "Unknown",
+              avatar_color: profileColors.get(row.id ?? "") ?? "#3B82F6",
               total_miles: row.total_miles ?? 0,
               total_walks: row.total_walks ?? 0,
               last_walk_date: row.last_walk_date,

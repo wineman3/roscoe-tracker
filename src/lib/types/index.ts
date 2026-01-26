@@ -58,6 +58,7 @@ export interface DestinationMilestone {
 export interface UserStats {
   id: string;
   display_name: string;
+  avatar_color: string;
   total_miles: number;
   total_walks: number;
   last_walk_date: string | null;
