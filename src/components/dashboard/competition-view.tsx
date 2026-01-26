@@ -9,10 +9,13 @@ interface CompetitionViewProps {
   currentUserId?: string;
 }
 
-export function CompetitionView({ stats, currentUserId }: CompetitionViewProps) {
+export function CompetitionView({
+  stats,
+  currentUserId,
+}: CompetitionViewProps) {
   const sortedStats = useMemo(
     () => [...stats].sort((a, b) => b.total_miles - a.total_miles),
-    [stats]
+    [stats],
   );
 
   const leader = sortedStats[0];
@@ -21,11 +24,11 @@ export function CompetitionView({ stats, currentUserId }: CompetitionViewProps) 
       sortedStats.length >= 2
         ? Math.abs(sortedStats[0].total_miles - sortedStats[1].total_miles)
         : 0,
-    [sortedStats]
+    [sortedStats],
   );
   const combinedTotal = useMemo(
     () => stats.reduce((sum, user) => sum + user.total_miles, 0),
-    [stats]
+    [stats],
   );
 
   if (stats.length === 0) {
