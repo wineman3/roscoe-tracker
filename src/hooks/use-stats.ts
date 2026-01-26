@@ -16,7 +16,17 @@ export function useStats() {
       return;
     }
 
-    setStats(data || []);
+    // Provide defaults for nullable fields
+    const normalized = (data || []).map((row) => ({
+      id: row.id ?? "",
+      display_name: row.display_name ?? "Unknown",
+      total_miles: row.total_miles ?? 0,
+      total_walks: row.total_walks ?? 0,
+      last_walk_date: row.last_walk_date,
+      week_miles: row.week_miles ?? 0,
+      month_miles: row.month_miles ?? 0,
+    }));
+    setStats(normalized);
     setLoading(false);
   }, []);
 
@@ -35,7 +45,16 @@ export function useStats() {
         async () => {
           const { data } = await supabase.from("user_stats").select("*");
           if (data) {
-            setStats(data);
+            const normalized = data.map((row) => ({
+              id: row.id ?? "",
+              display_name: row.display_name ?? "Unknown",
+              total_miles: row.total_miles ?? 0,
+              total_walks: row.total_walks ?? 0,
+              last_walk_date: row.last_walk_date,
+              week_miles: row.week_miles ?? 0,
+              month_miles: row.month_miles ?? 0,
+            }));
+            setStats(normalized);
           }
         }
       )

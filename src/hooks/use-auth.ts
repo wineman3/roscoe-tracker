@@ -41,6 +41,13 @@ export function useAuth() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Clear auth cookies set by middleware so the session doesn't persist
+    document.cookie.split(";").forEach((c) => {
+      const name = c.trim().split("=")[0];
+      if (name.startsWith("sb-")) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
     router.push("/login");
   };
 
