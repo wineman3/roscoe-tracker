@@ -130,7 +130,6 @@ export function CompetitionView({
           <p className="text-4xl font-heading text-text">
             {combinedTotal.toFixed(1)} miles
           </p>
-          <p className="text-sm text-text/60 mt-1">Combined by both of you!</p>
         </div>
       </CardContent>
     </Card>
