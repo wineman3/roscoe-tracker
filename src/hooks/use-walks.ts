@@ -78,9 +78,12 @@ export function useWalks() {
   }, [load]);
 
   const addWalk = async (miles: number, notes: string, userId: string, date?: string) => {
-    const walked_at = date
-      ? new Date(`${date}T12:00:00`).toISOString()
-      : new Date().toISOString();
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    // If selected date is today, use current time; otherwise use noon for that date
+    const walked_at = !date || date === today
+      ? now.toISOString()
+      : new Date(`${date}T12:00:00`).toISOString();
     const { data, error } = await supabase
       .from("walks")
       .insert({
