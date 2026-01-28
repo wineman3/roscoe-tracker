@@ -89,7 +89,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
                   )}
                   <span className="font-base text-text/70"> walked </span>
                   <span className="text-blue-600">
-                    {walk.miles.toFixed(1)} mi
+                    {walk.miles} mi
                   </span>
                 </p>
                 {walk.notes && (
@@ -100,7 +100,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
                 </p>
               </div>
 
-              <Badge variant="secondary">{walk.miles.toFixed(1)} mi</Badge>
+              <Badge variant="secondary">{walk.miles} mi</Badge>
 
               {onDelete && walk.user_id === currentUserId && (
                 <Button
