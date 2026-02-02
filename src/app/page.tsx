@@ -9,6 +9,7 @@ import { CompetitionView } from "@/components/dashboard/competition-view";
 import { QuickAddWalk } from "@/components/dashboard/quick-add-walk";
 import { RecentWalks } from "@/components/dashboard/recent-walks";
 import { DestinationTracker } from "@/components/journey/destination-tracker";
+import { MiniCalendar } from "@/components/dashboard/mini-calendar";
 import { BadgeNotification } from "@/components/badges/badge-notification";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -90,6 +91,8 @@ export default function DashboardPage() {
           milestones={milestones}
           combinedMiles={combinedMiles}
         />
+
+        <MiniCalendar />
 
         <RecentWalks walks={walks} currentUserId={user?.id ?? ""} onDelete={user ? handleWalkDelete : undefined} />
       </main>
