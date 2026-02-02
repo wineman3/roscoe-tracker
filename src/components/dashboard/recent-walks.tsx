@@ -93,7 +93,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
                   </span>
                 </p>
                 {walk.notes && (
-                  <p className="text-xs text-text/50 truncate">{walk.notes}</p>
+                  <p className="text-sm text-text/70 mt-1">{walk.notes}</p>
                 )}
                 <p className="text-xs text-text/40 mt-1">
                   {walk.walked_at ? formatDate(walk.walked_at) : "Unknown date"}
