@@ -11,6 +11,7 @@ import { RecentWalks } from "@/components/dashboard/recent-walks";
 import { DestinationTracker } from "@/components/journey/destination-tracker";
 import { MiniCalendar } from "@/components/dashboard/mini-calendar";
 import { BadgeNotification } from "@/components/badges/badge-notification";
+import { StravaConnect } from "@/components/dashboard/strava-connect";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import Image from "next/image";
@@ -61,15 +62,18 @@ export default function DashboardPage() {
             <Image src="/icons/cartoon_roscoe.png" alt="Roscoe" width={36} height={36} />
             <h1 className="text-2xl font-heading text-text">Roscoe Tracker</h1>
           </div>
-          {user ? (
-            <Button variant="ghost" onClick={signOut}>
-              Sign Out
-            </Button>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {user && <StravaConnect userId={user.id} />}
+            {user ? (
+              <Button variant="ghost" onClick={signOut}>
+                Sign Out
+              </Button>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 

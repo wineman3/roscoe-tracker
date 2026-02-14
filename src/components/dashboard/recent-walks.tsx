@@ -93,6 +93,9 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
                 )}
                 <p className="text-xs text-text/40 mt-1">
                   {walk.walked_at ? formatDate(walk.walked_at) : "Unknown date"}
+                  {walk.source === "strava" && (
+                    <span className="ml-2 text-orange-500">via Strava</span>
+                  )}
                 </p>
               </div>
 

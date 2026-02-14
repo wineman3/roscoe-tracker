@@ -181,30 +181,83 @@ export type Database = {
           },
         ]
       }
+      strava_connections: {
+        Row: {
+          id: string
+          user_id: string
+          strava_athlete_id: number
+          access_token: string
+          refresh_token: string
+          token_expires_at: string
+          connected_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          strava_athlete_id: number
+          access_token: string
+          refresh_token: string
+          token_expires_at: string
+          connected_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          strava_athlete_id?: number
+          access_token?: string
+          refresh_token?: string
+          token_expires_at?: string
+          connected_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strava_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       walks: {
         Row: {
           created_at: string | null
+          external_id: string | null
           id: string
+          linked_walk_id: string | null
           miles: number
           notes: string | null
+          source: string
           updated_at: string | null
           user_id: string
           walked_at: string | null
         }
         Insert: {
           created_at?: string | null
+          external_id?: string | null
           id?: string
+          linked_walk_id?: string | null
           miles: number
           notes?: string | null
+          source?: string
           updated_at?: string | null
           user_id: string
           walked_at?: string | null
         }
         Update: {
           created_at?: string | null
+          external_id?: string | null
           id?: string
+          linked_walk_id?: string | null
           miles?: number
           notes?: string | null
+          source?: string
           updated_at?: string | null
           user_id?: string
           walked_at?: string | null
@@ -228,6 +281,12 @@ export type Database = {
       }
     }
     Views: {
+      combined_miles: {
+        Row: {
+          total: number | null
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           display_name: string | null

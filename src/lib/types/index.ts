@@ -12,6 +12,9 @@ export interface Walk {
   user_id: string;
   miles: number;
   notes: string | null;
+  source: string;
+  external_id: string | null;
+  linked_walk_id: string | null;
   walked_at: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -20,6 +23,15 @@ export interface Walk {
     display_name: string;
     avatar_color: string | null;
   };
+}
+
+export interface StravaConnection {
+  id: string;
+  user_id: string;
+  strava_athlete_id: number;
+  connected_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BadgeDefinition {
