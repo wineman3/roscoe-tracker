@@ -52,70 +52,66 @@ export function QuickAddWalk({ userId, onSubmit }: QuickAddWalkProps) {
 
   return (
     <Card>
-        <CardHeader>
-          <CardTitle>Log a Walk</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="miles">Miles Walked</Label>
-              <Input
-                id="miles"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max="99.99"
-                value={miles}
-                onChange={(e) => setMiles(e.target.value)}
-                required
-                placeholder="2.5"
-              />
+      <CardHeader>
+        <CardTitle>Log a Walk</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-full overflow-hidden">
+          <div className="space-y-2">
+            <Label htmlFor="miles">Miles Walked</Label>
+            <Input
+              id="miles"
+              type="number"
+              step="0.01"
+              min="0.01"
+              max="99.99"
+              value={miles}
+              onChange={(e) => setMiles(e.target.value)}
+              required
+              placeholder="2.5"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              className="appearance-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (optional)</Label>
+            <Input
+              id="notes"
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Morning walk around the neighborhood"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-100 border-2 border-border text-red-700 px-4 py-3 rounded-base text-sm">
+              {error}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
+          {success && (
+            <div className="bg-green-100 border-2 border-border text-green-700 px-4 py-3 rounded-base text-sm">
+              Walk logged successfully!
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Input
-                id="notes"
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Morning walk around the neighborhood"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-100 border-2 border-border text-red-700 px-4 py-3 rounded-base text-sm">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-100 border-2 border-border text-green-700 px-4 py-3 rounded-base text-sm">
-                Walk logged successfully!
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={loading}
-              size="lg"
-              className="w-full"
-            >
-              {loading ? "Adding..." : "Add Walk"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <Button type="submit" disabled={loading} size="lg" className="w-full">
+            {loading ? "Adding..." : "Add Walk"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
