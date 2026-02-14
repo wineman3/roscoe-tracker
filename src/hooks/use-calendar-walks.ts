@@ -31,11 +31,12 @@ export function useCalendarWalks(year: number, month: number) {
       return;
     }
 
-    // Group walks by date (YYYY-MM-DD)
+    // Group walks by local date (YYYY-MM-DD)
     const grouped = new Map<string, Walk[]>();
     for (const walk of data || []) {
       if (walk.walked_at) {
-        const dateKey = walk.walked_at.split("T")[0];
+        const d = new Date(walk.walked_at);
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         const existing = grouped.get(dateKey) || [];
         grouped.set(dateKey, [...existing, walk]);
       }

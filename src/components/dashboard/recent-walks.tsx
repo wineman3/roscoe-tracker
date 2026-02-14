@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DateTime } from "luxon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,23 +14,18 @@ interface RecentWalksProps {
 }
 
 function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInHours = diffInMs / (1000 * 60 * 60);
-  const diffInDays = diffInHours / 24;
+  const dt = DateTime.fromISO(dateString, { zone: "local" });
+  const now = DateTime.now();
+  const diffInDays = now.startOf("day").diff(dt.startOf("day"), "days").days;
 
-  if (diffInHours < 1) {
-    const minutes = Math.floor(diffInMs / (1000 * 60));
-    return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
-  } else if (diffInHours < 24) {
-    const hours = Math.floor(diffInHours);
-    return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  if (diffInDays < 1) {
+    // Today — show relative time (e.g. "3 hours ago")
+    return dt.toRelative({ style: "long" }) ?? "just now";
   } else if (diffInDays < 7) {
-    const days = Math.floor(diffInDays);
-    return `${days} ${days === 1 ? "day" : "days"} ago`;
+    // This week — show calendar-day relative (e.g. "yesterday", "2 days ago")
+    return dt.toRelativeCalendar() ?? dt.toLocaleString(DateTime.DATE_MED);
   } else {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return dt.toLocaleString({ month: "short", day: "numeric" });
   }
 }
 
