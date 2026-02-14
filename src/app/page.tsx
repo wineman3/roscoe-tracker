@@ -57,12 +57,12 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-bg">
       <header className="border-b-2 border-border bg-blank">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Image src="/icons/cartoon_roscoe.png" alt="Roscoe" width={36} height={36} />
-            <h1 className="text-2xl font-heading text-text">Roscoe Tracker</h1>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Image src="/icons/cartoon_roscoe.png" alt="Roscoe" width={36} height={36} className="flex-shrink-0" />
+            <h1 className="text-2xl font-heading text-text whitespace-nowrap">Roscoe Tracker</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {user && <StravaConnect userId={user.id} />}
             {user ? (
               <Button variant="ghost" onClick={signOut}>

@@ -25,12 +25,9 @@ export function StravaConnect({ userId }: StravaConnectProps) {
 
   if (connected) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text/60">Strava connected</span>
-        <Button variant="ghost" size="sm" onClick={disconnect}>
-          Disconnect
-        </Button>
-      </div>
+      <Button variant="ghost" size="sm" onClick={disconnect} className="text-xs text-text/60">
+        <span className="hidden sm:inline">Strava connected · </span>Disconnect
+      </Button>
     );
   }
 
