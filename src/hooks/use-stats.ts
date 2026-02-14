@@ -80,10 +80,18 @@ export function useStats() {
     };
   }, [load]);
 
-  const combinedMiles = useMemo(
-    () => stats.reduce((sum, user) => sum + user.total_miles, 0),
-    [stats]
-  );
+  const [combinedMiles, setCombinedMiles] = useState(0);
+
+  useEffect(() => {
+    const loadCombined = async () => {
+      const { data } = await supabase
+        .from("combined_miles")
+        .select("total")
+        .single();
+      setCombinedMiles(data?.total ?? 0);
+    };
+    loadCombined();
+  }, [stats]);
 
   return { stats, loading, combinedMiles, reload: load };
 }
