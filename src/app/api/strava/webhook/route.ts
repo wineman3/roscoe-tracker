@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
   try {
     const event: StravaWebhookEvent = await request.json();
 
-    // Only process activity creates (and updates temporarily for testing)
-    if (event.object_type !== "activity" || (event.aspect_type !== "create" && event.aspect_type !== "update")) {
+    // Only process new activity creates
+    if (event.object_type !== "activity" || event.aspect_type !== "create") {
       return NextResponse.json({ status: "ignored" });
     }
 
