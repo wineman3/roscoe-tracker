@@ -87,7 +87,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <CompetitionView stats={stats} currentUserId={user?.id ?? ""} />
+        <CompetitionView stats={stats} currentUserId={user?.id ?? ""} combinedMiles={combinedMiles} />
 
         {user && <QuickAddWalk userId={user.id} onSubmit={handleWalkSubmit} />}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DateTime } from "luxon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +29,36 @@ function formatDate(dateString: string) {
   }
 }
 
+interface DisplayWalk extends Walk {
+  partnerName?: string;
+}
+
 export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Merge linked walks: hide the secondary (linked) walk, show both names on the primary
+  const displayWalks = useMemo<DisplayWalk[]>(() => {
+    // Map: primary walk id -> secondary walk (the one with linked_walk_id set)
+    const linkedTo = new Map<string, Walk>();
+    for (const walk of walks) {
+      if (walk.linked_walk_id) {
+        linkedTo.set(walk.linked_walk_id, walk);
+      }
+    }
+
+    return walks
+      .filter((w) => !w.linked_walk_id) // hide secondary walks
+      .map((walk) => {
+        const partner = linkedTo.get(walk.id);
+        if (partner) {
+          return {
+            ...walk,
+            partnerName: partner.profiles?.display_name ?? undefined,
+          };
+        }
+        return walk;
+      });
+  }, [walks]);
 
   const handleDelete = async (walkId: string) => {
     if (!onDelete) return;
@@ -41,7 +69,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
       setDeletingId(null);
     }
   };
-  if (walks.length === 0) {
+  if (displayWalks.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -63,7 +91,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
       </CardHeader>
       <CardContent>
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {walks.map((walk) => (
+          {displayWalks.map((walk) => (
             <div
               key={walk.id}
               className="flex items-center gap-4 p-3 bg-bg rounded-base border-2 border-border hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
@@ -79,9 +107,19 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-heading text-text">
-                  {walk.profiles?.display_name || "Unknown"}
-                  {walk.user_id === currentUserId && (
-                    <span className="text-text/50 font-base ml-1">(You)</span>
+                  {walk.partnerName ? (
+                    <>
+                      {walk.profiles?.display_name || "Unknown"}
+                      {" & "}
+                      {walk.partnerName}
+                    </>
+                  ) : (
+                    <>
+                      {walk.profiles?.display_name || "Unknown"}
+                      {walk.user_id === currentUserId && (
+                        <span className="text-text/50 font-base ml-1">(You)</span>
+                      )}
+                    </>
                   )}
                   <span className="font-base text-text/70"> walked </span>
                   <span className="text-blue-600">
@@ -101,7 +139,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
 
               <Badge variant="secondary">{walk.miles} mi</Badge>
 
-              {onDelete && walk.user_id === currentUserId && (
+              {onDelete && walk.user_id === currentUserId && !walk.partnerName && (
                 <Button
                   variant="ghost"
                   size="sm"

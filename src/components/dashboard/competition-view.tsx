@@ -7,11 +7,13 @@ import type { UserStats } from "@/lib/types";
 interface CompetitionViewProps {
   stats: UserStats[];
   currentUserId?: string;
+  combinedMiles: number;
 }
 
 export function CompetitionView({
   stats,
   currentUserId,
+  combinedMiles,
 }: CompetitionViewProps) {
   const sortedStats = useMemo(
     () => [...stats].sort((a, b) => b.total_miles - a.total_miles),
@@ -26,11 +28,6 @@ export function CompetitionView({
         : 0,
     [sortedStats],
   );
-  const combinedTotal = useMemo(
-    () => stats.reduce((sum, user) => sum + user.total_miles, 0),
-    [stats],
-  );
-
   if (stats.length === 0) {
     return (
       <Card>
@@ -128,7 +125,7 @@ export function CompetitionView({
             Roscoe&apos;s Total Journey
           </p>
           <p className="text-4xl font-heading text-text">
-            {combinedTotal.toFixed(1)} miles
+            {combinedMiles.toFixed(1)} miles
           </p>
         </div>
       </CardContent>
