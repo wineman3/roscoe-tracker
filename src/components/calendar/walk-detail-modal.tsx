@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Modal } from "@/components/ui/modal";
 import type { Walk } from "@/lib/types";
 
@@ -9,6 +10,10 @@ interface WalkDetailModalProps {
   date: Date | null;
   walks: Walk[];
   currentUserId?: string;
+}
+
+interface DisplayWalk extends Walk {
+  partnerName?: string;
 }
 
 function formatTime(dateString: string): string {
@@ -29,6 +34,25 @@ function formatFullDate(date: Date): string {
   });
 }
 
+function mergeLinkedWalks(walks: Walk[]): DisplayWalk[] {
+  const linkedTo = new Map<string, Walk>();
+  for (const walk of walks) {
+    if (walk.linked_walk_id) {
+      linkedTo.set(walk.linked_walk_id, walk);
+    }
+  }
+
+  return walks
+    .filter((w) => !w.linked_walk_id)
+    .map((walk) => {
+      const partner = linkedTo.get(walk.id);
+      if (partner) {
+        return { ...walk, partnerName: partner.profiles?.display_name ?? undefined };
+      }
+      return walk;
+    });
+}
+
 export function WalkDetailModal({
   isOpen,
   onClose,
@@ -38,7 +62,8 @@ export function WalkDetailModal({
 }: WalkDetailModalProps) {
   if (!date) return null;
 
-  const totalMiles = walks.reduce((sum, walk) => sum + walk.miles, 0);
+  const displayWalks = mergeLinkedWalks(walks);
+  const totalMiles = displayWalks.reduce((sum, walk) => sum + walk.miles, 0);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -50,12 +75,12 @@ export function WalkDetailModal({
 
         {/* Summary */}
         <p className="text-text/70 mb-6">
-          {walks.length} {walks.length === 1 ? "walk" : "walks"}, {totalMiles.toFixed(1)} total miles
+          {displayWalks.length} {displayWalks.length === 1 ? "walk" : "walks"}, {totalMiles.toFixed(1)} total miles
         </p>
 
         {/* Walk list */}
         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-          {walks.map((walk) => (
+          {displayWalks.map((walk) => (
             <div
               key={walk.id}
               className="p-4 bg-bg rounded-base border-2 border-border"
@@ -75,9 +100,11 @@ export function WalkDetailModal({
                   {/* Name and miles */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-heading text-text">
-                      {walk.profiles?.display_name || "Unknown"}
+                      {walk.partnerName
+                        ? `${walk.profiles?.display_name || "Unknown"} & ${walk.partnerName}`
+                        : walk.profiles?.display_name || "Unknown"}
                     </span>
-                    {walk.user_id === currentUserId && (
+                    {!walk.partnerName && walk.user_id === currentUserId && (
                       <span className="text-text/50 text-sm">(You)</span>
                     )}
                     <span className="text-blue-600 font-heading">
