@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type { DestinationMilestone } from "@/lib/types";
+import { TrailMap } from "./trail-map";
 
 interface DestinationTrackerProps {
   milestones: DestinationMilestone[];
@@ -19,32 +19,15 @@ export function DestinationTracker({
     [milestones]
   );
 
-  const currentMilestone = useMemo(
-    () =>
-      sortedMilestones.filter((m) => m.cumulative_miles <= combinedMiles).pop() ??
-      null,
-    [sortedMilestones, combinedMiles]
-  );
-
   const nextMilestone = useMemo(
     () =>
       sortedMilestones.find((m) => m.cumulative_miles > combinedMiles) ?? null,
     [sortedMilestones, combinedMiles]
   );
 
-  const progress = useMemo(() => {
-    if (!nextMilestone) return 100;
-    const startMiles = currentMilestone?.cumulative_miles || 0;
-    const endMiles = nextMilestone.cumulative_miles;
-    const currentProgress = combinedMiles - startMiles;
-    const totalSegment = endMiles - startMiles;
-    return Math.min((currentProgress / totalSegment) * 100, 100);
-  }, [nextMilestone, currentMilestone, combinedMiles]);
-
-  const completedMilestones = useMemo(
-    () => sortedMilestones.filter((m) => m.cumulative_miles <= combinedMiles),
-    [sortedMilestones, combinedMiles]
-  );
+  const milesToNext = nextMilestone
+    ? nextMilestone.cumulative_miles - combinedMiles
+    : 0;
 
   if (combinedMiles === 0) {
     return (
@@ -69,86 +52,38 @@ export function DestinationTracker({
       <CardHeader>
         <CardTitle>Roscoe&apos;s Journey</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {currentMilestone && (
-          <div className="bg-green-100 border-2 border-border rounded-base p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl">{currentMilestone.icon}</span>
-              <div className="flex-1">
-                <p className="text-sm text-green-800 font-heading">
-                  Latest Achievement
-                </p>
-                <p className="text-text font-base">
-                  {currentMilestone.fun_message}
-                </p>
-                <p className="text-xs text-text/60 mt-1">
-                  {currentMilestone.from_city} → {currentMilestone.to_city},{" "}
-                  {currentMilestone.state} (
-                  {currentMilestone.cumulative_miles.toFixed(0)} mi)
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <CardContent className="space-y-4">
+        {/* Next milestone callout */}
         {nextMilestone ? (
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-lg font-heading text-text">
-                Next Stop: {nextMilestone.to_city}, {nextMilestone.state}
-              </h4>
-              <span className="text-2xl">{nextMilestone.icon}</span>
+          <div className="flex items-center gap-3 rounded-base border-2 border-border bg-main/10 px-4 py-3">
+            <span className="text-3xl">{nextMilestone.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading text-text">
+                Next: {nextMilestone.to_city}, {nextMilestone.state}
+              </p>
+              <p className="text-sm text-text/60">
+                {milesToNext.toFixed(1)} miles to go!
+              </p>
             </div>
-
-            <Progress value={progress} />
-
-            <div className="flex justify-between text-sm text-text/60 mt-2">
-              <span>{combinedMiles.toFixed(1)} miles</span>
-              <span>
-                {(nextMilestone.cumulative_miles - combinedMiles).toFixed(1)}{" "}
-                miles to go!
-              </span>
+            <div className="text-right">
+              <p className="text-xs text-text/50">Total</p>
+              <p className="font-heading text-text">
+                {combinedMiles.toFixed(1)} mi
+              </p>
             </div>
           </div>
         ) : (
-          <div className="bg-yellow-100 border-2 border-border rounded-base p-6 text-center">
-            <p className="text-4xl mb-2">🎉</p>
-            <h4 className="text-xl font-heading text-text mb-2">
-              Journey Complete!
-            </h4>
-            <p className="text-text/70">
-              Roscoe has reached all destinations! You&apos;ve walked{" "}
-              {combinedMiles.toFixed(1)} miles together!
+          <div className="rounded-base border-2 border-border bg-yellow-100 p-4 text-center">
+            <p className="text-3xl mb-2">🎉</p>
+            <p className="font-heading text-text">Journey Complete!</p>
+            <p className="text-sm text-text/70">
+              {combinedMiles.toFixed(1)} miles walked!
             </p>
           </div>
         )}
 
-        {completedMilestones.length > 0 && (
-          <div>
-            <h4 className="text-sm font-heading text-text/70 mb-3">
-              Completed Destinations ({completedMilestones.length})
-            </h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {[...completedMilestones].reverse().map((milestone) => (
-                <div
-                  key={milestone.id}
-                  className="flex items-center gap-3 p-2 bg-bg rounded-base border-2 border-border"
-                >
-                  <span className="text-xl">{milestone.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-heading text-text truncate">
-                      {milestone.to_city}, {milestone.state}
-                    </p>
-                    <p className="text-xs text-text/50">
-                      {milestone.cumulative_miles.toFixed(0)} miles
-                    </p>
-                  </div>
-                  <span className="text-green-600 font-heading">✓</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Trail map */}
+        <TrailMap milestones={milestones} combinedMiles={combinedMiles} />
       </CardContent>
     </Card>
   );
