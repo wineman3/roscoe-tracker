@@ -93,10 +93,10 @@ export function TrailMap({ milestones, combinedMiles }: TrailMapProps) {
   return (
     <div
       ref={containerRef}
-      className="relative max-h-[60vh] overflow-y-auto overscroll-contain rounded-base border-2 border-border bg-blank p-4"
+      className="relative max-h-[60vh] overflow-y-auto overscroll-contain rounded-base border-2 border-border bg-blank px-2 py-3"
     >
       {/* Milestones (top = destination, bottom = start) */}
-      <div className="relative space-y-5 py-2">
+      <div className="relative space-y-3 py-2">
         {/* Vertical trail line */}
         <div
           className="absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 bg-black/20 rounded-full"
@@ -172,7 +172,7 @@ export function TrailMap({ milestones, combinedMiles }: TrailMapProps) {
         )}
 
         {/* Start marker at bottom */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div />
           <div className="flex items-center justify-center">
             <div className="h-5 w-5 rounded-full border-2 border-green-600 bg-green-500" />

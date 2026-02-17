@@ -15,7 +15,7 @@ export function TrailMilestone({
 }: TrailMilestoneProps) {
   const card = (
     <div
-      className={`flex items-center gap-2 rounded-base border-2 border-border px-3 py-2 text-sm ${
+      className={`flex min-w-0 items-center gap-1.5 rounded-base border-2 border-border px-2 py-1.5 text-xs ${
         reached
           ? "bg-green-100 shadow-[2px_2px_0px_0px_#000]"
           : isNext
@@ -23,12 +23,12 @@ export function TrailMilestone({
             : "bg-bg/50"
       }`}
     >
-      <span className="text-lg">{milestone.icon}</span>
+      <span className="text-base shrink-0">{milestone.icon}</span>
       <div className="min-w-0">
-        <p className="font-heading text-text truncate">
-          {milestone.to_city}, {milestone.state}
+        <p className="font-heading text-text truncate leading-tight">
+          {milestone.to_city}
         </p>
-        <p className="text-xs text-text/50">
+        <p className="text-[10px] text-text/50 leading-tight">
           {milestone.cumulative_miles.toFixed(0)} mi
         </p>
       </div>
@@ -36,9 +36,9 @@ export function TrailMilestone({
   );
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
       {/* Left column */}
-      <div className={`flex ${side === "left" ? "justify-end" : ""}`}>
+      <div className={`flex overflow-hidden ${side === "left" ? "justify-end" : ""}`}>
         {side === "left" ? card : null}
       </div>
 
@@ -56,7 +56,7 @@ export function TrailMilestone({
       </div>
 
       {/* Right column */}
-      <div className={`flex ${side === "right" ? "" : "justify-end"}`}>
+      <div className={`flex overflow-hidden ${side === "right" ? "" : "justify-end"}`}>
         {side === "right" ? card : null}
       </div>
     </div>
