@@ -31,7 +31,7 @@ export function StravaConnect({ userId }: StravaConnectProps) {
     );
   }
 
-  const stravaAuthUrl = `https://www.strava.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID}&redirect_uri=${window.location.origin}/api/strava/callback&response_type=code&scope=activity:read&state=${userId}`;
+  const stravaAuthUrl = `https://www.strava.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID}&redirect_uri=${window.location.origin}/api/strava/callback&response_type=code&scope=activity:read_all&state=${userId}`;
 
   return (
     <Button
