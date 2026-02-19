@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
   try {
     const event: StravaWebhookEvent = await request.json();
 
-    // Only process new activity creates
-    if (event.object_type !== "activity" || event.aspect_type !== "create") {
+    // Only process activity creates and updates
+    if (
+      event.object_type !== "activity" ||
+      (event.aspect_type !== "create" && event.aspect_type !== "update")
+    ) {
       return NextResponse.json({ status: "ignored" });
     }
 
@@ -52,15 +55,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "skipped_type" });
     }
 
+    // Convert meters to miles
+    const miles = Math.round((activity.distance / 1609.344) * 100) / 100;
+
+    if (event.aspect_type === "update") {
+      // Update existing walk if we have it
+      const { data: existing } = await supabase
+        .from("walks")
+        .select("id")
+        .eq("user_id", connection.user_id)
+        .eq("external_id", String(activity.id))
+        .single();
+
+      if (existing) {
+        await supabase
+          .from("walks")
+          .update({ notes: activity.name, miles })
+          .eq("id", existing.id);
+        return NextResponse.json({ status: "updated" });
+      }
+
+      // Activity wasn't imported yet (e.g. was private on create) — fall through to insert
+    }
+
     // Skip activities from before the user connected
     const activityDate = new Date(activity.start_date);
     const connectedAt = new Date(connection.connected_at);
     if (activityDate < connectedAt) {
       return NextResponse.json({ status: "skipped_before_connection" });
     }
-
-    // Convert meters to miles
-    const miles = Math.round((activity.distance / 1609.344) * 100) / 100;
 
     // Insert the walk (dedup via unique constraint on external_id + user_id)
     const { error: insertError } = await supabase.from("walks").insert({
