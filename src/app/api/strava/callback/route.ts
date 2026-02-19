@@ -18,27 +18,33 @@ export async function GET(request: NextRequest) {
     const tokens = await exchangeCodeForTokens(code);
     const supabase = createServiceClient();
 
-    // Upsert the connection (update tokens if reconnecting)
-    const { error: upsertError } = await supabase
-      .from("strava_connections")
-      .upsert(
-        {
-          user_id: state,
-          strava_athlete_id: tokens.athlete.id,
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-          token_expires_at: new Date(
-            tokens.expires_at * 1000
-          ).toISOString(),
-          connected_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+    const now = new Date().toISOString();
+    const tokenFields = {
+      strava_athlete_id: tokens.athlete.id,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      token_expires_at: new Date(tokens.expires_at * 1000).toISOString(),
+      updated_at: now,
+    };
 
-    if (upsertError) {
-      console.error("Failed to save Strava connection:", upsertError);
-      return NextResponse.redirect(`${baseUrl}/?strava=error`);
+    // Try updating existing connection first (preserves original connected_at)
+    const { data: updated } = await supabase
+      .from("strava_connections")
+      .update(tokenFields)
+      .eq("user_id", state)
+      .select("id")
+      .single();
+
+    if (!updated) {
+      // No existing row — first time connecting
+      const { error: insertError } = await supabase
+        .from("strava_connections")
+        .insert({ user_id: state, connected_at: now, ...tokenFields });
+
+      if (insertError) {
+        console.error("Failed to save Strava connection:", insertError);
+        return NextResponse.redirect(`${baseUrl}/?strava=error`);
+      }
     }
 
     return NextResponse.redirect(`${baseUrl}/?strava=connected`);

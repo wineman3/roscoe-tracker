@@ -76,13 +76,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Activity wasn't imported yet (e.g. was private on create) — fall through to insert
-    }
-
-    // Skip activities from before the user connected
-    const activityDate = new Date(activity.start_date);
-    const connectedAt = new Date(connection.connected_at);
-    if (activityDate < connectedAt) {
-      return NextResponse.json({ status: "skipped_before_connection" });
+    } else {
+      // For create events, skip activities from before the user connected
+      const activityDate = new Date(activity.start_date);
+      const connectedAt = new Date(connection.connected_at);
+      if (activityDate < connectedAt) {
+        return NextResponse.json({ status: "skipped_before_connection" });
+      }
     }
 
     // Insert the walk (dedup via unique constraint on external_id + user_id)
