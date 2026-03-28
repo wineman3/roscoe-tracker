@@ -31,6 +31,8 @@ function formatDate(dateString: string) {
 
 interface DisplayWalk extends Walk {
   partnerName?: string;
+  partnerUserId?: string;
+  partnerWalkId?: string;
 }
 
 export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps) {
@@ -54,6 +56,8 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
           return {
             ...walk,
             partnerName: partner.profiles?.display_name ?? undefined,
+            partnerUserId: partner.user_id,
+            partnerWalkId: partner.id,
           };
         }
         return walk;
@@ -139,7 +143,7 @@ export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps
 
               <Badge variant="secondary">{walk.miles} mi</Badge>
 
-              {onDelete && walk.user_id === currentUserId && !walk.partnerName && (
+              {onDelete && (walk.user_id === currentUserId || walk.partnerUserId === currentUserId) && (
                 <Button
                   variant="ghost"
                   size="sm"
