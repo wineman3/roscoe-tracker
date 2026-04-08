@@ -107,14 +107,10 @@ export function useWalks() {
   };
 
   const deleteWalk = async (walkId: string) => {
-    // Find partner walk (secondary walk that links to this one)
-    const partnerWalk = walks.find((w) => w.linked_walk_id === walkId);
-    const idsToDelete = [walkId, ...(partnerWalk ? [partnerWalk.id] : [])];
-
-    // Clear FK reference before deleting primary
-    if (partnerWalk) {
-      await supabase.from("walks").update({ linked_walk_id: null }).eq("id", partnerWalk.id);
-    }
+    const walk = walks.find((w) => w.id === walkId);
+    const idsToDelete = walk?.session_id
+      ? walks.filter((w) => w.session_id === walk.session_id).map((w) => w.id)
+      : [walkId];
 
     const { error } = await supabase.from("walks").delete().in("id", idsToDelete);
     if (error) throw error;

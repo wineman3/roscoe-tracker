@@ -22,6 +22,7 @@ async function syncPartnerWalk(
   supabase: SupabaseClient,
   primaryWalkId: string,
   primaryUserId: string,
+  sessionId: string,
   miles: number,
   notes: string,
   walkedAt: string,
@@ -45,17 +46,19 @@ async function syncPartnerWalk(
     .eq("user_id", otherUser.id)
     .gte("walked_at", windowStart)
     .lte("walked_at", windowEnd)
-    .is("linked_walk_id", null)
+    .is("session_id", null)
     .order("walked_at", { ascending: true })
     .limit(1)
     .single();
 
   if (existingPartnerWalk) {
+    // Partner walk already exists — assign both to the shared session
     await supabase
       .from("walks")
-      .update({ linked_walk_id: primaryWalkId })
+      .update({ session_id: sessionId })
       .eq("id", existingPartnerWalk.id);
   } else {
+    // Create a walk for the partner in the same session
     const { data: partnerWalk } = await supabase
       .from("walks")
       .insert({
@@ -64,7 +67,7 @@ async function syncPartnerWalk(
         notes,
         source: "strava",
         walked_at: walkedAt,
-        linked_walk_id: primaryWalkId,
+        session_id: sessionId,
       })
       .select("id")
       .single();
@@ -124,7 +127,7 @@ export async function POST(request: NextRequest) {
     // time window (created by syncPartnerWalk without an external_id)
     const { data: existing } = await supabase
       .from("walks")
-      .select("id, linked_walk_id, external_id")
+      .select("id, session_id, external_id")
       .eq("user_id", connection.user_id)
       .or(`external_id.eq.${externalId},and(external_id.is.null,walked_at.gte.${windowStart},walked_at.lte.${windowEnd})`)
       .order("walked_at", { ascending: true })
@@ -142,11 +145,14 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", existing.id);
 
-      if (!existing.linked_walk_id) {
+      if (!existing.session_id) {
+        const sessionId = crypto.randomUUID();
+        await supabase.from("walks").update({ session_id: sessionId }).eq("id", existing.id);
         await syncPartnerWalk(
           supabase,
           existing.id,
           connection.user_id,
+          sessionId,
           miles,
           activity.name,
           activity.start_date,
@@ -164,6 +170,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const sessionId = crypto.randomUUID();
     const { data: insertedWalk, error: insertError } = await supabase
       .from("walks")
       .insert({
@@ -173,6 +180,7 @@ export async function POST(request: NextRequest) {
         source: "strava",
         external_id: externalId,
         walked_at: activity.start_date,
+        session_id: sessionId,
       })
       .select("id")
       .single();
@@ -191,6 +199,7 @@ export async function POST(request: NextRequest) {
       supabase,
       insertedWalk.id,
       connection.user_id,
+      sessionId,
       miles,
       activity.name,
       activity.start_date,

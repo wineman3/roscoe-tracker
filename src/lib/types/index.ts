@@ -14,7 +14,7 @@ export interface Walk {
   notes: string | null;
   source: string;
   external_id: string | null;
-  linked_walk_id: string | null;
+  session_id: string | null;
   walked_at: string | null;
   created_at: string | null;
   updated_at: string | null;

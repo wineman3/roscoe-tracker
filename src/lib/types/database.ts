@@ -230,7 +230,7 @@ export type Database = {
           created_at: string | null
           external_id: string | null
           id: string
-          linked_walk_id: string | null
+          session_id: string | null
           miles: number
           notes: string | null
           source: string
@@ -242,7 +242,7 @@ export type Database = {
           created_at?: string | null
           external_id?: string | null
           id?: string
-          linked_walk_id?: string | null
+          session_id?: string | null
           miles: number
           notes?: string | null
           source?: string
@@ -254,7 +254,7 @@ export type Database = {
           created_at?: string | null
           external_id?: string | null
           id?: string
-          linked_walk_id?: string | null
+          session_id?: string | null
           miles?: number
           notes?: string | null
           source?: string

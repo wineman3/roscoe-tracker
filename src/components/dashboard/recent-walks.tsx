@@ -38,30 +38,31 @@ interface DisplayWalk extends Walk {
 export function RecentWalks({ walks, currentUserId, onDelete }: RecentWalksProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Merge linked walks: hide the secondary (linked) walk, show both names on the primary
+  // Group joint walks by session_id, showing one entry per session
   const displayWalks = useMemo<DisplayWalk[]>(() => {
-    // Map: primary walk id -> secondary walk (the one with linked_walk_id set)
-    const linkedTo = new Map<string, Walk>();
+    const seen = new Set<string>();
+    const result: DisplayWalk[] = [];
+
     for (const walk of walks) {
-      if (walk.linked_walk_id) {
-        linkedTo.set(walk.linked_walk_id, walk);
+      if (walk.session_id) {
+        if (seen.has(walk.session_id)) continue;
+        seen.add(walk.session_id);
+
+        const partner = walks.find(
+          (w) => w.session_id === walk.session_id && w.id !== walk.id
+        );
+        result.push({
+          ...walk,
+          partnerName: partner?.profiles?.display_name ?? undefined,
+          partnerUserId: partner?.user_id,
+          partnerWalkId: partner?.id,
+        });
+      } else {
+        result.push(walk);
       }
     }
 
-    return walks
-      .filter((w) => !w.linked_walk_id) // hide secondary walks
-      .map((walk) => {
-        const partner = linkedTo.get(walk.id);
-        if (partner) {
-          return {
-            ...walk,
-            partnerName: partner.profiles?.display_name ?? undefined,
-            partnerUserId: partner.user_id,
-            partnerWalkId: partner.id,
-          };
-        }
-        return walk;
-      });
+    return result;
   }, [walks]);
 
   const handleDelete = async (walkId: string) => {

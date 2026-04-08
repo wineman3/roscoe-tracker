@@ -35,22 +35,27 @@ function formatFullDate(date: Date): string {
 }
 
 function mergeLinkedWalks(walks: Walk[]): DisplayWalk[] {
-  const linkedTo = new Map<string, Walk>();
+  const seen = new Set<string>();
+  const result: DisplayWalk[] = [];
+
   for (const walk of walks) {
-    if (walk.linked_walk_id) {
-      linkedTo.set(walk.linked_walk_id, walk);
+    if (walk.session_id) {
+      if (seen.has(walk.session_id)) continue;
+      seen.add(walk.session_id);
+
+      const partner = walks.find(
+        (w) => w.session_id === walk.session_id && w.id !== walk.id
+      );
+      result.push({
+        ...walk,
+        partnerName: partner?.profiles?.display_name ?? undefined,
+      });
+    } else {
+      result.push(walk);
     }
   }
 
-  return walks
-    .filter((w) => !w.linked_walk_id)
-    .map((walk) => {
-      const partner = linkedTo.get(walk.id);
-      if (partner) {
-        return { ...walk, partnerName: partner.profiles?.display_name ?? undefined };
-      }
-      return walk;
-    });
+  return result;
 }
 
 export function WalkDetailModal({
