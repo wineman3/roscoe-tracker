@@ -115,46 +115,55 @@ export async function POST(request: NextRequest) {
 
     const miles = Math.round((activity.distance / 1609.344) * 100) / 100;
 
-    if (event.aspect_type === "update") {
-      const { data: existing } = await supabase
+    const externalId = String(activity.id);
+    const activityTime = new Date(activity.start_date);
+    const windowStart = new Date(activityTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
+    const windowEnd = new Date(activityTime.getTime() + 2 * 60 * 60 * 1000).toISOString();
+
+    // Look for an existing walk — either by external_id (own Strava import) or by
+    // time window (created by syncPartnerWalk without an external_id)
+    const { data: existing } = await supabase
+      .from("walks")
+      .select("id, linked_walk_id, external_id")
+      .eq("user_id", connection.user_id)
+      .or(`external_id.eq.${externalId},and(external_id.is.null,walked_at.gte.${windowStart},walked_at.lte.${windowEnd})`)
+      .order("walked_at", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (existing) {
+      await supabase
         .from("walks")
-        .select("id, linked_walk_id")
-        .eq("user_id", connection.user_id)
-        .eq("external_id", String(activity.id))
-        .single();
+        .update({
+          notes: activity.name,
+          miles,
+          // Claim the external_id if this walk was created by syncPartnerWalk
+          ...(existing.external_id ? {} : { external_id: externalId, source: "strava" }),
+        })
+        .eq("id", existing.id);
 
-      if (existing) {
-        await supabase
-          .from("walks")
-          .update({ notes: activity.name, miles })
-          .eq("id", existing.id);
-
-        // If not already linked, try to link or create a partner walk
-        if (!existing.linked_walk_id) {
-          await syncPartnerWalk(
-            supabase,
-            existing.id,
-            connection.user_id,
-            miles,
-            activity.name,
-            activity.start_date,
-          );
-        }
-
-        return NextResponse.json({ status: "updated" });
+      if (!existing.linked_walk_id) {
+        await syncPartnerWalk(
+          supabase,
+          existing.id,
+          connection.user_id,
+          miles,
+          activity.name,
+          activity.start_date,
+        );
       }
 
-      // Activity wasn't imported yet (e.g. was private on create) — fall through to insert
-    } else {
-      // For create events, skip activities from before the user connected
-      const activityDate = new Date(activity.start_date);
+      return NextResponse.json({ status: "updated" });
+    }
+
+    // No existing walk found — insert if allowed
+    if (event.aspect_type === "create") {
       const connectedAt = new Date(connection.connected_at);
-      if (activityDate < connectedAt) {
+      if (activityTime < connectedAt) {
         return NextResponse.json({ status: "skipped_before_connection" });
       }
     }
 
-    // Insert the walk (dedup via unique constraint on external_id + user_id)
     const { data: insertedWalk, error: insertError } = await supabase
       .from("walks")
       .insert({
@@ -162,14 +171,13 @@ export async function POST(request: NextRequest) {
         miles,
         notes: activity.name,
         source: "strava",
-        external_id: String(activity.id),
+        external_id: externalId,
         walked_at: activity.start_date,
       })
       .select("id")
       .single();
 
     if (insertError) {
-      // Unique constraint violation = duplicate, which is fine
       if (insertError.code === "23505") {
         return NextResponse.json({ status: "duplicate" });
       }
