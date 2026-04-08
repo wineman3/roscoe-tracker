@@ -46,35 +46,19 @@ async function syncPartnerWalk(
     .eq("user_id", otherUser.id)
     .gte("walked_at", windowStart)
     .lte("walked_at", windowEnd)
+    .gte("miles", miles * 0.8)
+    .lte("miles", miles * 1.2)
     .is("session_id", null)
     .order("walked_at", { ascending: true })
     .limit(1)
     .single();
 
   if (existingPartnerWalk) {
-    // Partner walk already exists — assign both to the shared session
+    // Partner already has a walk around the same time — link them into a session
     await supabase
       .from("walks")
       .update({ session_id: sessionId })
       .eq("id", existingPartnerWalk.id);
-  } else {
-    // Create a walk for the partner in the same session
-    const { data: partnerWalk } = await supabase
-      .from("walks")
-      .insert({
-        user_id: otherUser.id,
-        miles,
-        notes,
-        source: "strava",
-        walked_at: walkedAt,
-        session_id: sessionId,
-      })
-      .select("id")
-      .single();
-
-    if (partnerWalk) {
-      await supabase.rpc("check_and_award_badges", { p_user_id: otherUser.id });
-    }
   }
 }
 
