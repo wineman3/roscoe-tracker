@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValidAccessToken, fetchActivity } from "@/lib/strava/client";
 import type { StravaWebhookEvent } from "@/lib/strava/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Strava subscription validation
 export async function GET(request: NextRequest) {
@@ -15,6 +16,63 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+
+async function syncPartnerWalk(
+  supabase: SupabaseClient,
+  primaryWalkId: string,
+  primaryUserId: string,
+  miles: number,
+  notes: string,
+  walkedAt: string,
+) {
+  const { data: otherUsers } = await supabase
+    .from("profiles")
+    .select("id")
+    .neq("id", primaryUserId);
+
+  const otherUser = otherUsers?.[0];
+  if (!otherUser) return;
+
+  // Check if the partner already has a walk within 2 hours (e.g. their own Strava fired)
+  const activityTime = new Date(walkedAt);
+  const windowStart = new Date(activityTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
+  const windowEnd = new Date(activityTime.getTime() + 2 * 60 * 60 * 1000).toISOString();
+
+  const { data: existingPartnerWalk } = await supabase
+    .from("walks")
+    .select("id")
+    .eq("user_id", otherUser.id)
+    .gte("walked_at", windowStart)
+    .lte("walked_at", windowEnd)
+    .is("linked_walk_id", null)
+    .order("walked_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  if (existingPartnerWalk) {
+    await supabase
+      .from("walks")
+      .update({ linked_walk_id: primaryWalkId })
+      .eq("id", existingPartnerWalk.id);
+  } else {
+    const { data: partnerWalk } = await supabase
+      .from("walks")
+      .insert({
+        user_id: otherUser.id,
+        miles,
+        notes,
+        source: "strava",
+        walked_at: walkedAt,
+        linked_walk_id: primaryWalkId,
+      })
+      .select("id")
+      .single();
+
+    if (partnerWalk) {
+      await supabase.rpc("check_and_award_badges", { p_user_id: otherUser.id });
+    }
+  }
 }
 
 // Strava webhook event handler
@@ -55,14 +113,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "skipped_type" });
     }
 
-    // Convert meters to miles
     const miles = Math.round((activity.distance / 1609.344) * 100) / 100;
 
     if (event.aspect_type === "update") {
-      // Update existing walk if we have it
       const { data: existing } = await supabase
         .from("walks")
-        .select("id")
+        .select("id, linked_walk_id")
         .eq("user_id", connection.user_id)
         .eq("external_id", String(activity.id))
         .single();
@@ -72,6 +128,19 @@ export async function POST(request: NextRequest) {
           .from("walks")
           .update({ notes: activity.name, miles })
           .eq("id", existing.id);
+
+        // If not already linked, try to link or create a partner walk
+        if (!existing.linked_walk_id) {
+          await syncPartnerWalk(
+            supabase,
+            existing.id,
+            connection.user_id,
+            miles,
+            activity.name,
+            activity.start_date,
+          );
+        }
+
         return NextResponse.json({ status: "updated" });
       }
 
@@ -86,14 +155,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert the walk (dedup via unique constraint on external_id + user_id)
-    const { error: insertError } = await supabase.from("walks").insert({
-      user_id: connection.user_id,
-      miles,
-      notes: activity.name,
-      source: "strava",
-      external_id: String(activity.id),
-      walked_at: activity.start_date,
-    });
+    const { data: insertedWalk, error: insertError } = await supabase
+      .from("walks")
+      .insert({
+        user_id: connection.user_id,
+        miles,
+        notes: activity.name,
+        source: "strava",
+        external_id: String(activity.id),
+        walked_at: activity.start_date,
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       // Unique constraint violation = duplicate, which is fine
@@ -104,10 +177,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: "insert_error" });
     }
 
-    // Check and award badges
-    await supabase.rpc("check_and_award_badges", {
-      p_user_id: connection.user_id,
-    });
+    await supabase.rpc("check_and_award_badges", { p_user_id: connection.user_id });
+
+    await syncPartnerWalk(
+      supabase,
+      insertedWalk.id,
+      connection.user_id,
+      miles,
+      activity.name,
+      activity.start_date,
+    );
 
     return NextResponse.json({ status: "created" });
   } catch (err) {
