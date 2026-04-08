@@ -53,12 +53,22 @@ async function syncPartnerWalk(
     .limit(1)
     .single();
 
+  console.log("syncPartnerWalk: looking for partner walk", {
+    otherUserId: otherUser.id,
+    windowStart,
+    windowEnd,
+    milesMin: miles * 0.8,
+    milesMax: miles * 1.2,
+  });
+
   if (existingPartnerWalk) {
-    // Partner already has a walk around the same time — link them into a session
+    console.log("syncPartnerWalk: found partner walk, linking", existingPartnerWalk.id);
     await supabase
       .from("walks")
       .update({ session_id: sessionId })
       .eq("id", existingPartnerWalk.id);
+  } else {
+    console.log("syncPartnerWalk: no matching partner walk found");
   }
 }
 
