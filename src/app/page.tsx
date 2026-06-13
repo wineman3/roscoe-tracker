@@ -78,13 +78,21 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <div className="bg-main rounded-base border-2 border-border p-8 shadow-shadow">
-          <h2 className="text-3xl font-heading text-text mb-2">
-            {user ? "Welcome back!" : "Roscoe's Walks"}
-          </h2>
-          <p className="text-text/70">
-            {user ? "Ready to walk Roscoe?" : "See how far Roscoe has gone!"}
-          </p>
+        <div className="bg-main rounded-base border-2 border-border p-8 shadow-shadow flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-heading text-text mb-2">
+              {user ? "Welcome back!" : "Roscoe's Walks"}
+            </h2>
+            <p className="text-text/70">
+              {user ? "Ready to walk Roscoe?" : "See how far Roscoe has gone!"}
+            </p>
+          </div>
+          <Link
+            href="/insights"
+            className="text-sm text-text/70 hover:text-text transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            View Insights &rarr;
+          </Link>
         </div>
 
         <CompetitionView stats={stats} currentUserId={user?.id ?? ""} combinedMiles={combinedMiles} />
