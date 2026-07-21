@@ -18,15 +18,31 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
 
-// Check if the partner has a matching walk (same time window + similar distance)
-// and if so, assign both walks the same session_id. Only called when the primary
-// walk has no session_id yet (i.e. not already confirmed as joint).
+const PARTNER_MATCH_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+const PARTNER_MATCH_GPS_RADIUS_MILES = 0.25;
+
+function milesBetween(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 3958.8 * 2 * Math.asin(Math.sqrt(a));
+}
+
+// Check if the partner has a matching walk (same tight time window + similar
+// distance + nearby GPS start point, when both have coordinates) and if so,
+// assign both walks the same session_id. Only called when the primary walk
+// has no session_id yet (i.e. not already confirmed as joint).
 async function syncPartnerWalk(
   supabase: SupabaseClient,
   primaryWalkId: string,
   primaryUserId: string,
   miles: number,
   walkedAt: string,
+  startLat: number | null,
+  startLng: number | null,
 ) {
   const { data: otherUsers } = await supabase
     .from("profiles")
@@ -37,21 +53,24 @@ async function syncPartnerWalk(
   if (!otherUser) return;
 
   const activityTime = new Date(walkedAt);
-  const windowStart = new Date(activityTime.getTime() - 2 * 60 * 60 * 1000).toISOString();
-  const windowEnd = new Date(activityTime.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const windowStart = new Date(activityTime.getTime() - PARTNER_MATCH_WINDOW_MS).toISOString();
+  const windowEnd = new Date(activityTime.getTime() + PARTNER_MATCH_WINDOW_MS).toISOString();
 
-  const { data: partnerWalk } = await supabase
+  const { data: candidates } = await supabase
     .from("walks")
-    .select("id")
+    .select("id, start_lat, start_lng")
     .eq("user_id", otherUser.id)
     .gte("walked_at", windowStart)
     .lte("walked_at", windowEnd)
     .gte("miles", miles * 0.8)
     .lte("miles", miles * 1.2)
     .is("session_id", null)
-    .order("walked_at", { ascending: true })
-    .limit(1)
-    .single();
+    .order("walked_at", { ascending: true });
+
+  const partnerWalk = candidates?.find((c) => {
+    if (startLat == null || c.start_lat == null || c.start_lng == null) return true;
+    return milesBetween(startLat, startLng!, c.start_lat, c.start_lng) <= PARTNER_MATCH_GPS_RADIUS_MILES;
+  });
 
   if (partnerWalk) {
     const sessionId = crypto.randomUUID();
@@ -101,6 +120,8 @@ export async function POST(request: NextRequest) {
     }
 
     const miles = Math.round((activity.distance / 1609.344) * 100) / 100;
+    const startLat = activity.start_latlng?.[0] ?? null;
+    const startLng = activity.start_latlng?.[1] ?? null;
 
     const externalId = String(activity.id);
     const activityTime = new Date(activity.start_date);
@@ -123,12 +144,14 @@ export async function POST(request: NextRequest) {
         .update({
           notes: activity.name,
           miles,
+          start_lat: startLat,
+          start_lng: startLng,
           ...(existing.external_id ? {} : { external_id: externalId, source: "strava" }),
         })
         .eq("id", existing.id);
 
       if (!existing.session_id) {
-        await syncPartnerWalk(supabase, existing.id, connection.user_id, miles, activity.start_date);
+        await syncPartnerWalk(supabase, existing.id, connection.user_id, miles, activity.start_date, startLat, startLng);
       }
 
       return NextResponse.json({ status: "updated" });
@@ -151,6 +174,8 @@ export async function POST(request: NextRequest) {
         source: "strava",
         external_id: externalId,
         walked_at: activity.start_date,
+        start_lat: startLat,
+        start_lng: startLng,
       })
       .select("id")
       .single();
@@ -164,7 +189,7 @@ export async function POST(request: NextRequest) {
     }
 
     await supabase.rpc("check_and_award_badges", { p_user_id: connection.user_id });
-    await syncPartnerWalk(supabase, insertedWalk.id, connection.user_id, miles, activity.start_date);
+    await syncPartnerWalk(supabase, insertedWalk.id, connection.user_id, miles, activity.start_date, startLat, startLng);
 
     return NextResponse.json({ status: "created" });
   } catch (err) {

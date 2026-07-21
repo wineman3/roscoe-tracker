@@ -14,6 +14,7 @@ export interface StravaActivity {
   distance: number;
   start_date: string;
   name: string;
+  start_latlng?: [number, number];
 }
 
 export interface StravaWebhookEvent {

@@ -234,6 +234,8 @@ export type Database = {
           miles: number
           notes: string | null
           source: string
+          start_lat: number | null
+          start_lng: number | null
           updated_at: string | null
           user_id: string
           walked_at: string | null
@@ -246,6 +248,8 @@ export type Database = {
           miles: number
           notes?: string | null
           source?: string
+          start_lat?: number | null
+          start_lng?: number | null
           updated_at?: string | null
           user_id: string
           walked_at?: string | null
@@ -258,6 +262,8 @@ export type Database = {
           miles?: number
           notes?: string | null
           source?: string
+          start_lat?: number | null
+          start_lng?: number | null
           updated_at?: string | null
           user_id?: string
           walked_at?: string | null
